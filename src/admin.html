@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Paneli - Bağış Sitesi</title>
+  <link rel="stylesheet" href="./style.scss" />
+</head>
+
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="h3 mb-1">Yönetici Paneli</h1>
+        <p class="text-muted mb-0">Bağışları görüntüle, PayTR ürünlerini yönet.</p>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="/" class="btn btn-outline-primary">Ana Sayfa</a>
+        <button id="logoutButton" class="btn btn-outline-danger">Çıkış</button>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <p class="text-muted mb-2">Toplam Bağış</p>
+            <h2 class="display-6 mb-0" id="totalDonations">0</h2>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <p class="text-muted mb-2">Toplam Tutar</p>
+            <h2 class="display-6 mb-0" id="totalAmount">0 ₺</h2>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <p class="text-muted mb-2">Son Bağışlar</p>
+            <div id="recentDonations" class="small text-muted">Yükleniyor...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-lg-4">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <h2 class="h5 mb-3">Ürün Ekle / Düzenle</h2>
+            <form id="productForm" class="row g-3">
+              <input type="hidden" id="productId" />
+              <div class="col-12">
+                <label class="form-label">Ürün adı</label>
+                <input class="form-control" id="productName" required />
+              </div>
+              <div class="col-12">
+                <label class="form-label">Fiyat (₺)</label>
+                <input type="number" class="form-control" id="productPrice" min="1" step="0.01" required />
+              </div>
+              <div class="col-12">
+                <label class="form-label">Açıklama</label>
+                <textarea class="form-control" id="productDescription" rows="3"></textarea>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Resim yolu</label>
+                <input class="form-control" id="productImage" placeholder="./assets/images/product-img-1.jpg" />
+              </div>
+              <div class="col-12 d-flex gap-2">
+                <button type="submit" class="btn btn-primary" id="productSubmitButton">Ürün Ekle</button>
+                <button type="button" class="btn btn-outline-secondary" id="productCancelButton" hidden>İptal</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <h2 class="h5 mb-3">PayTR Ürünleri</h2>
+            <div id="productList" class="row g-3"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Sipariş Listesi</h2>
+        <div class="table-responsive">
+          <table class="table table-striped align-middle">
+            <thead>
+              <tr>
+                <th>Sipariş No</th>
+                <th>Müşteri</th>
+                <th>Ürün</th>
+                <th>Tutar</th>
+                <th>Durum</th>
+                <th>Tarih</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTableBody">
+              <tr>
+                <td colspan="6" class="text-muted">Yükleniyor...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Bağış Listesi</h2>
+        <div class="table-responsive">
+          <table class="table table-striped align-middle">
+            <thead>
+              <tr>
+                <th>İsim</th>
+                <th>E-posta</th>
+                <th>Tutar</th>
+                <th>Not</th>
+                <th>Tarih</th>
+              </tr>
+            </thead>
+            <tbody id="donationsTableBody">
+              <tr>
+                <td colspan="5" class="text-muted">Yükleniyor...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    const productForm = document.getElementById('productForm');
+    const productIdInput = document.getElementById('productId');
+    const productNameInput = document.getElementById('productName');
+    const productPriceInput = document.getElementById('productPrice');
+    const productDescriptionInput = document.getElementById('productDescription');
+    const productImageInput = document.getElementById('productImage');
+    const productSubmitButton = document.getElementById('productSubmitButton');
+    const productCancelButton = document.getElementById('productCancelButton');
+    const productList = document.getElementById('productList');
+
+    async function loadAdminData() {
+      const response = await fetch('/api/admin/summary');
+      const data = await response.json();
+      document.getElementById('totalDonations').textContent = data.totalDonations ?? 0;
+      document.getElementById('totalAmount').textContent = `${(data.totalAmount ?? 0).toLocaleString('tr-TR')} ₺`;
+
+      const recent = data.recentDonations ?? [];
+      document.getElementById('recentDonations').innerHTML = recent.length
+        ? recent.map((item) => `<div>${item.name} • ${Number(item.amount).toLocaleString('tr-TR')} ₺</div>`).join('')
+        : '<div>Henüz bağış yok.</div>';
+    }
+
+    async function loadDonations() {
+      const response = await fetch('/api/donations');
+      const donations = await response.json();
+      const body = document.getElementById('donationsTableBody');
+
+      if (!donations.length) {
+        body.innerHTML = '<tr><td colspan="5" class="text-muted">Henüz bağış yok.</td></tr>';
+        return;
+      }
+
+      body.innerHTML = donations.map((item) => `
+          <tr>
+            <td>${item.name}</td>
+            <td>${item.email || '-'}</td>
+            <td>${Number(item.amount).toLocaleString('tr-TR')} ₺</td>
+            <td>${item.note || '-'}</td>
+            <td>${new Date(item.createdAt).toLocaleString('tr-TR')}</td>
+          </tr>
+        `).join('');
+    }
+
+    async function loadOrders() {
+      const response = await fetch('/api/admin/orders');
+      const orders = await response.json();
+      const body = document.getElementById('ordersTableBody');
+
+      if (!orders.length) {
+        body.innerHTML = '<tr><td colspan="6" class="text-muted">Henüz sipariş yok.</td></tr>';
+        return;
+      }
+
+      body.innerHTML = orders.map((order) => `
+          <tr>
+            <td>${order.orderId}</td>
+            <td>${order.customerName || '-'}<br><small class="text-muted">${order.customerEmail || '-'} • ${order.customerPhone || '-'}</small></td>
+            <td>${order.productName || '-'}</td>
+            <td>${Number(order.amount).toLocaleString('tr-TR')} ₺</td>
+            <td>
+              <select class="form-select form-select-sm order-status" data-order-id="${order.orderId}">
+                <option value="Beklemede" ${order.status === 'Beklemede' ? 'selected' : ''}>Beklemede</option>
+                <option value="Onaylandı" ${order.status === 'Onaylandı' ? 'selected' : ''}>Onaylandı</option>
+                <option value="Kargoda" ${order.status === 'Kargoda' ? 'selected' : ''}>Kargoda</option>
+                <option value="Tamamlandı" ${order.status === 'Tamamlandı' ? 'selected' : ''}>Tamamlandı</option>
+              </select>
+            </td>
+            <td>${new Date(order.createdAt).toLocaleString('tr-TR')}</td>
+          </tr>
+        `).join('');
+    }
+
+    document.addEventListener('change', async (event) => {
+      const select = event.target.closest('.order-status');
+      if (!select) return;
+
+      const response = await fetch(`/api/admin/orders/${select.dataset.orderId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: select.value }),
+      });
+
+      if (response.ok) {
+        await loadOrders();
+      }
+    });
+
+    async function loadProducts() {
+      const response = await fetch('/api/admin/products');
+      const products = await response.json();
+
+      if (!products.length) {
+        productList.innerHTML = '<div class="col-12 text-muted">Henüz ürün yok.</div>';
+        return;
+      }
+
+      productList.innerHTML = products.map((product) => `
+          <div class="col-12">
+            <div class="border rounded p-3 d-flex justify-content-between align-items-start gap-3">
+              <div>
+                <h3 class="h6 mb-1">${product.name}</h3>
+                <p class="small text-muted mb-1">${product.description || '-'}</p>
+                <div class="fw-semibold">${Number(product.price).toLocaleString('tr-TR')} ₺</div>
+              </div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary btn-sm" data-edit="${product.id}">Düzenle</button>
+                <button class="btn btn-outline-danger btn-sm" data-delete="${product.id}">Sil</button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+    }
+
+    productList.addEventListener('click', async (event) => {
+      const editButton = event.target.closest('[data-edit]');
+      const deleteButton = event.target.closest('[data-delete]');
+
+      if (editButton) {
+        const id = editButton.getAttribute('data-edit');
+        const response = await fetch(`/api/admin/products`);
+        const products = await response.json();
+        const product = products.find((item) => item.id === id);
+        if (product) {
+          productIdInput.value = product.id;
+          productNameInput.value = product.name;
+          productPriceInput.value = product.price;
+          productDescriptionInput.value = product.description || '';
+          productImageInput.value = product.image || '';
+          productSubmitButton.textContent = 'Güncelle';
+          productCancelButton.hidden = false;
+        }
+        return;
+      }
+
+      if (deleteButton) {
+        const id = deleteButton.getAttribute('data-delete');
+        const response = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+          await loadProducts();
+        }
+      }
+    });
+
+    productCancelButton.addEventListener('click', () => {
+      productForm.reset();
+      productIdInput.value = '';
+      productSubmitButton.textContent = 'Ürün Ekle';
+      productCancelButton.hidden = true;
+    });
+
+    productForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const payload = {
+        name: productNameInput.value,
+        price: productPriceInput.value,
+        description: productDescriptionInput.value,
+        image: productImageInput.value,
+      };
+
+      const method = productIdInput.value ? 'PUT' : 'POST';
+      const url = productIdInput.value ? `/api/admin/products/${productIdInput.value}` : '/api/admin/products';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        productForm.reset();
+        productIdInput.value = '';
+        productSubmitButton.textContent = 'Ürün Ekle';
+        productCancelButton.hidden = true;
+        await loadProducts();
+      }
+    });
+
+    document.getElementById('logoutButton').addEventListener('click', async () => {
+      await fetch('/api/admin/logout', { method: 'POST' });
+      window.location.href = '/admin-login.html';
+    });
+
+    loadAdminData();
+    loadDonations();
+    loadOrders();
+    loadProducts();
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,31 @@
+{
+  "dependencies": {
+    "@popperjs/core": "^2.11.8",
+    "bootstrap": "^5.3.8",
+    "bootstrap-icons": "^1.13.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.1",
+    "express": "^4.19.2",
+    "mongoose": "^8.17.0",
+    "sass": "^1.77.6",
+    "swiper": "^12.0.3",
+    "vite": "^6.4.1"
+  },
+  "name": "furnish-bootstrap-template",
+  "version": "1.0.0",
+  "description": "Hello",
+  "type": "module",
+  "main": "vite.config.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "fast-glob": "^3.3.3"
+  }
+}

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Girişi - Help Aline</title>
+  <link rel="stylesheet" href="./style.scss" />
+</head>
+
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <h1 class="h4 mb-3">Admin Girişi</h1>
+            <p class="text-muted mb-4">Lütfen yalnızca parolayı girerek yönetici paneline erişin.</p>
+
+            <form id="loginForm" class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Şifre</label>
+                <input type="password" id="adminPassword" class="form-control" required autocomplete="current-password" />
+              </div>
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary w-100">Giriş Yap</button>
+              </div>
+              <div class="col-12">
+                <div id="loginMessage" class="text-danger small"></div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    const loginForm = document.getElementById('loginForm');
+    const loginMessage = document.getElementById('loginMessage');
+    const adminPassword = document.getElementById('adminPassword');
+
+    loginForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      loginMessage.textContent = '';
+
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: adminPassword.value.trim() }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        loginMessage.textContent = data.message || 'Giriş yapılamadı. Lütfen parolayı kontrol edin.';
+        return;
+      }
+
+      window.location.href = '/admin';
+    });
+  </script>
+</body>
+
+</html>
